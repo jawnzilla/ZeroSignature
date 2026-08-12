@@ -137,4 +137,24 @@ export function playHurt() {
   o.connect(g); g.connect(master);
   o.start(t0); o.stop(t0 + 0.32);
 }
+export function playKnock() {
+  if (!ctx) return;
+  const t0 = ctx.currentTime;
+  // dull body thump
+  const o = ctx.createOscillator(); o.type = 'sine';
+  const g = ctx.createGain();
+  o.frequency.setValueAtTime(90, t0);
+  o.frequency.exponentialRampToValueAtTime(45, t0 + 0.18);
+  env(g, t0, 0.003, 0.5, 0.22);
+  o.connect(g); g.connect(master);
+  o.start(t0); o.stop(t0 + 0.25);
+  // cloth/impact noise
+  const src = ctx.createBufferSource();
+  src.buffer = noiseBuffer(0.08);
+  const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 300;
+  const g2 = ctx.createGain();
+  env(g2, t0, 0.002, 0.3, 0.08);
+  src.connect(f); f.connect(g2); g2.connect(master);
+  src.start(t0);
+}
 export function playAlertSting() { playAlert(); }

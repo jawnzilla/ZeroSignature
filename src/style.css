@@ -65,6 +65,14 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #05070d; f
 }
 #message.show { opacity: 1; }
 
+#interact {
+  position: absolute; left: 50%; bottom: 132px; transform: translateX(-50%);
+  font-size: 15px; letter-spacing: 2px; color: #ffd60a; font-weight: 600;
+  text-shadow: 0 0 12px rgba(0,0,0,.9), 0 0 20px rgba(255,214,10,.4);
+  opacity: 0; transition: opacity .2s; pointer-events: none; white-space: nowrap;
+}
+#interact.show { opacity: 1; }
+
 #controls {
   position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%);
   font-size: 11px; color: rgba(160,175,200,.55); letter-spacing: 1px; white-space: nowrap;
@@ -112,6 +120,7 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #05070d; f
 #gameover {
   position: fixed; inset: 0; z-index: 40; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;
   background: radial-gradient(ellipse at center, rgba(60,6,6,.6), rgba(0,0,0,.9)); text-align: center;
+  pointer-events: auto;
 }
 #gameover.hidden { display: none; }
 #gameover h2 { color: #ff3b30; letter-spacing: 6px; font-size: 34px; text-shadow: 0 0 30px rgba(255,59,48,.6); }

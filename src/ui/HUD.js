@@ -16,9 +16,10 @@ export class HUD {
       <div id="intel">INTEL <span id="intel-count">0</span></div>
       <div id="objective"></div>
       <div id="message"></div>
+      <div id="interact"></div>
       <div id="controls">
-        WASD move · Shift sprint · Ctrl crouch · Click shoot · R reload · T toggle suppressor<br>
-        Tab upgrades · G new mission
+        WASD move · Shift sprint · Ctrl crouch · Click shoot · E knock out<br>
+        R reload · T suppressor · Tab upgrades · G new mission
       </div>
       <div id="alert-vignette"></div>
       <div id="damage-flash"></div>
@@ -43,6 +44,7 @@ export class HUD {
       intel: this.el.querySelector('#intel-count'),
       objective: this.el.querySelector('#objective'),
       message: this.el.querySelector('#message'),
+      interact: this.el.querySelector('#interact'),
       alertVignette: this.el.querySelector('#alert-vignette'),
       upgradePanel: this.el.querySelector('#upgrade-panel'),
       upIntel: this.el.querySelector('#up-intel'),
@@ -86,6 +88,9 @@ export class HUD {
     // objective
     if (state.missionComplete) this.els.objective.textContent = '✓ SIGNATURE SECURED — press G for new mission';
     else this.els.objective.textContent = state.objectiveText || '';
+    // interact prompt (e.g. takedown)
+    this.els.interact.textContent = state.interactText || '';
+    this.els.interact.classList.toggle('show', !!state.interactText);
     // alert vignette
     const intensity = Math.min(1, det / 100) * (state.anyCombat ? 0.9 : 0.45);
     this.els.alertVignette.style.opacity = intensity;
@@ -137,13 +142,14 @@ export class HUD {
   isUpgradeOpen() { return !this.els.upgradePanel.classList.contains('hidden'); }
 
   showGameOver() {
+    if (this._gameOverBuilt) return;
+    this._gameOverBuilt = true;
     this.els.gameover.classList.remove('hidden');
     this.els.gameover.innerHTML = `
       <h2>MISSION FAILED</h2>
       <p>You were compromised.</p>
       <button id="retry-btn">NEW MISSION</button>`;
     this.els.gameover.querySelector('#retry-btn').addEventListener('click', () => {
-      this.els.gameover.classList.add('hidden');
       location.reload();
     });
   }

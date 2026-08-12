@@ -8,7 +8,7 @@ import { Enemy, EnemyManager } from './ai/Enemy.js';
 import { SecurityCamera, CameraManager } from './ai/Camera.js';
 import { Weapon } from './combat/Weapon.js';
 import { HUD } from './ui/HUD.js';
-import { initAudio, resumeAudio, playPickup, playAlert, toggleMute } from './systems/Audio.js';
+import { initAudio, resumeAudio, playPickup, playAlert, toggleMute, playKnock } from './systems/Audio.js';
 
 export class Game {
   constructor(container) {
@@ -165,6 +165,7 @@ export class Game {
       this.input.keys[e.code] = true;
       if (e.code === 'Tab') { e.preventDefault(); this.toggleUpgrades(); }
       if (e.code === 'KeyR') this.weapon.reload();
+      if (e.code === 'KeyE') this.attemptTakedown();
       if (e.code === 'KeyT') this.toggleSuppressor();
       if (e.code === 'KeyG' && this.missionComplete) this.newMission();
       if (e.code === 'KeyM') this.toggleMute();
@@ -245,6 +246,24 @@ export class Game {
     this.hud.message('CAMERA ALERT', 1.8);
   }
 
+  nearestUnawareEnemy(range) {
+    let best = null, bestD = range;
+    for (const e of this.enemyManager.enemies) {
+      if (!e.isUnaware()) continue;
+      const d = this.player.pos.distanceTo(e.pos);
+      if (d < bestD) { bestD = d; best = e; }
+    }
+    return best;
+  }
+
+  attemptTakedown() {
+    const e = this.nearestUnawareEnemy(2.2);
+    if (!e) return;
+    e.knockout();
+    playKnock();
+    this.hud.message('GUARD KNOCKED OUT', 1.4);
+  }
+
   tick() {
     try {
     const dt = Math.min(this.clock.getDelta(), 0.05);
@@ -283,7 +302,8 @@ export class Game {
     if (this.cameraManager) maxDet = Math.max(maxDet, this.cameraManager.maxDetection());
     if (!this.player.alive) { maxDet = 100; this.anyCombat = true; this.hud.showGameOver(); this.renderer.setAnimationLoop(null); }
 
-    this.hud.update({ player: this.player, maxDet, anyCombat: this.anyCombat, missionComplete: this.missionComplete, objectiveText: this.hud.objectiveText });
+    this.interactTarget = this.nearestUnawareEnemy(2.2);
+    this.hud.update({ player: this.player, maxDet, anyCombat: this.anyCombat, missionComplete: this.missionComplete, objectiveText: this.hud.objectiveText, interactText: this.interactTarget ? 'E — KNOCK OUT' : '' });
 
     // track player noise
     if (this.player.lastNoise && performance.now() - this.player.lastNoise.t < 120) {

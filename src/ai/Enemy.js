@@ -26,6 +26,7 @@ export class Enemy {
     this.investigateT = 0;
     this.fireTimer = 0;
     this.losFlash = 0;
+    this.down = false;          // non-lethal knocked out (stays out this run)
 
     this.buildMesh();
     this.scene.add(this.root);
@@ -60,7 +61,7 @@ export class Enemy {
 
   // Called by manager each frame.
   update(dt, game) {
-    if (!this.alive) return;
+    if (!this.alive || this.down) return;
     this.stateTime += dt;
     this.losFlash = Math.max(0, this.losFlash - dt * 3);
     this.alertPulse = Math.max(0, this.alertPulse - dt);
@@ -300,6 +301,26 @@ export class Enemy {
     if (this.health <= 0) { this.alive = false; this.root.rotation.x = Math.PI / 2; }
   }
 
+  // non-lethal takedown — guard is knocked out and stays down this run
+  knockout() {
+    if (this.down || !this.alive) return;
+    this.down = true;
+    this.state = 'DOWN';
+    this.detection = 0;
+    this.speed = 0;
+    this.path = [];
+    this.pathIndex = 0;
+    this.root.rotation.x = -Math.PI / 2;   // fall back
+    this.root.position.y = 0.04;
+    if (this.visor) this.visor.material = this.mats.enemyVisor;
+    if (this.cone) this.cone.visible = false;
+  }
+
+  // can the player sneak up and knock this one out?
+  isUnaware() {
+    return this.alive && !this.down && (this.state === 'PATROL' || this.state === 'SUSPICIOUS');
+  }
+
   dispose() { if (this.root) this.scene.remove(this.root); }
 }
 
@@ -320,17 +341,17 @@ export class EnemyManager {
     }
   }
   update(dt, game) {
-    // propagate alerts
-    const alerted = this.enemies.filter(e => e.alive && e.state === 'COMBAT');
+    // propagate alerts (down guards don't wake)
+    const alerted = this.enemies.filter(e => e.alive && !e.down && e.state === 'COMBAT');
     for (const a of alerted) {
       for (const e of this.enemies) {
-        if (e === a || !e.alive || e.state === 'COMBAT') continue;
+        if (e === a || !e.alive || e.down || e.state === 'COMBAT') continue;
         if (e.pos.distanceTo(a.pos) < 26) e.enterCombat();
       }
     }
     for (const e of this.enemies) if (e.alive) e.update(dt, game);
   }
-  countAlive() { return this.enemies.filter(e => e.alive).length; }
+  countAlive() { return this.enemies.filter(e => e.alive && !e.down).length; }
 }
 
 function lerpAngle(a, b, t) {
