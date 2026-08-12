@@ -1,0 +1,111 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: #05070d; font-family: 'Segoe UI', system-ui, sans-serif; color: #e8ecf4; }
+#app { position: fixed; inset: 0; }
+#app canvas { display: block; }
+
+#boot {
+  position: fixed; inset: 0; z-index: 50;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+  background: radial-gradient(ellipse at center, #0b1220 0%, #04060c 70%);
+  text-align: center; padding: 24px; cursor: pointer; transition: opacity .6s;
+}
+#boot.done { opacity: 0; pointer-events: none; }
+#boot h1 { font-size: 46px; letter-spacing: 8px; color: #4fc3ff; text-shadow: 0 0 30px rgba(79,195,255,.6); font-weight: 700; }
+#boot p { max-width: 520px; font-size: 15px; color: #aab8cf; }
+#boot .small { font-size: 12px; color: #5d6b82; }
+#boot .tag { font-size: 11px; letter-spacing: 4px; color: #3ddc84; }
+
+#hud { position: fixed; inset: 0; pointer-events: none; z-index: 10; }
+#crosshair {
+  position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px;
+  border-radius: 50%; background: rgba(255,255,255,.85); box-shadow: 0 0 6px rgba(0,0,0,.8);
+}
+
+#detect-wrap {
+  position: absolute; left: 50%; top: 18%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 8px; opacity: 0; transition: opacity .25s;
+}
+#detect-wrap.active { opacity: 1; }
+#detect-label { font-size: 18px; font-weight: 700; color: #ffd60a; text-shadow: 0 0 8px rgba(255,214,10,.8); animation: pulse 1s infinite; }
+#detect-bar { width: 180px; height: 10px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.25); border-radius: 5px; overflow: hidden; }
+#detect-fill { height: 100%; width: 0; background: #ffd60a; transition: width .15s linear; }
+
+#bars { position: absolute; left: 28px; bottom: 30px; display: flex; flex-direction: column; gap: 8px; width: 240px; }
+.bar-row { display: flex; align-items: center; gap: 8px; }
+.bar-label { width: 24px; font-size: 11px; font-weight: 700; color: #7f8ea6; }
+.bar { flex: 1; height: 12px; background: rgba(255,255,255,.1); border-radius: 6px; overflow: hidden; border: 1px solid rgba(255,255,255,.15); }
+.bar > div { height: 100%; background: #3ddc84; transition: width .2s; }
+#st-fill { background: #4fc3ff !important; }
+
+#weapon { position: absolute; right: 28px; bottom: 30px; text-align: right; font-size: 15px; letter-spacing: 2px; color: #d7e0ef; text-shadow: 0 0 8px rgba(0,0,0,.9); }
+#weapon #mag { color: #fff; font-weight: 700; }
+#supp { display: none; margin-left: 10px; color: #3ddc84; font-size: 12px; letter-spacing: 1px; }
+#intel { position: absolute; right: 28px; top: 22px; font-size: 14px; letter-spacing: 2px; color: #4fc3ff; text-shadow: 0 0 8px rgba(0,0,0,.9); }
+#intel-count { font-weight: 700; color: #fff; }
+
+#objective {
+  position: absolute; top: 22px; left: 50%; transform: translateX(-50%);
+  font-size: 12px; letter-spacing: 3px; color: #aab8cf; text-shadow: 0 0 8px rgba(0,0,0,.9); text-align: center;
+}
+
+#message {
+  position: absolute; left: 50%; bottom: 22%; transform: translateX(-50%);
+  font-size: 22px; font-weight: 600; letter-spacing: 2px; color: #fff;
+  text-shadow: 0 0 20px rgba(0,0,0,.9); opacity: 0; transition: opacity .3s; text-align: center;
+}
+#message.show { opacity: 1; }
+
+#controls {
+  position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%);
+  font-size: 11px; color: rgba(160,175,200,.55); letter-spacing: 1px; white-space: nowrap;
+  transition: opacity .8s; animation: ctrlfade 9s forwards;
+}
+@keyframes ctrlfade { 0%,75% { opacity: 1; } 100% { opacity: .22; } }
+
+#alert-vignette {
+  position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .2s;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(200,20,20,.55) 100%);
+}
+
+#damage-flash {
+  position: absolute; inset: 0; pointer-events: none; opacity: 0;
+  background: radial-gradient(ellipse at center, transparent 45%, rgba(200,10,10,.65) 100%);
+}
+#damage-flash.hit { animation: dmgflash .5s ease-out; }
+@keyframes dmgflash { 0% { opacity: 0; } 15% { opacity: 1; } 100% { opacity: 0; } }
+
+#intel {
+  position: absolute; right: 28px; top: 22px; font-size: 14px; letter-spacing: 2px; color: #4fc3ff;
+  padding: 8px 14px; border: 1px solid rgba(79,195,255,.28); border-radius: 20px;
+  background: rgba(6,10,18,.55); text-shadow: 0 0 8px rgba(0,0,0,.9); backdrop-filter: blur(4px);
+}
+
+#upgrade-panel {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  width: 480px; max-width: 92vw; background: rgba(8,12,20,.92); border: 1px solid #2a3550;
+  border-radius: 12px; padding: 24px; pointer-events: auto; box-shadow: 0 20px 60px rgba(0,0,0,.7);
+  backdrop-filter: blur(6px);
+}
+#upgrade-panel.hidden { display: none; }
+#upgrade-panel h2 { color: #4fc3ff; letter-spacing: 4px; font-size: 18px; margin-bottom: 4px; }
+#upgrade-panel .sub { color: #aab8cf; margin-bottom: 16px; font-size: 14px; }
+#upgrade-panel .hint { margin-top: 16px; color: #5d6b82; font-size: 12px; }
+.up-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border: 1px solid #1b2438; border-radius: 8px; margin-bottom: 8px; background: rgba(255,255,255,.02); }
+.up-name { font-weight: 600; color: #e8ecf4; }
+.up-lvl { color: #4fc3ff; letter-spacing: 2px; font-size: 12px; }
+.up-desc { font-size: 12px; color: #7f8ea6; margin-top: 2px; }
+.up-buy { pointer-events: auto; padding: 8px 16px; border: none; border-radius: 6px; background: #2a8a55; color: #fff; font-weight: 700; cursor: pointer; }
+.up-buy:disabled { background: #1b2438; color: #5d6b82; cursor: default; }
+.up-buy:not(:disabled):hover { background: #34b06b; }
+
+#gameover {
+  position: fixed; inset: 0; z-index: 40; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;
+  background: radial-gradient(ellipse at center, rgba(60,6,6,.6), rgba(0,0,0,.9)); text-align: center;
+}
+#gameover.hidden { display: none; }
+#gameover h2 { color: #ff3b30; letter-spacing: 6px; font-size: 34px; text-shadow: 0 0 30px rgba(255,59,48,.6); }
+#gameover p { color: #d0a0a0; }
+#gameover button { padding: 14px 34px; border: none; border-radius: 8px; background: #b3261e; color: #fff; font-weight: 700; letter-spacing: 2px; cursor: pointer; font-size: 15px; }
+#gameover button:hover { background: #d93a30; }
+
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
