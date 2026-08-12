@@ -14,9 +14,9 @@ export function setupPostFX(renderer, scene, camera) {
 
   // SSAO grounds objects into the geometry — kills the floating/hard-shadow look.
   const ssao = new SSAOPass(scene, camera, renderer.domElement.width, renderer.domElement.height);
-  ssao.kernelRadius = 1.2;
-  ssao.minDistance = 0.02;
-  ssao.maxDistance = 1.0;
+  ssao.kernelRadius = 0.4;
+  ssao.minDistance = 0.002;
+  ssao.maxDistance = 0.4;
   ssao.output = SSAOPass.OUTPUT.Default;
   composer.addPass(ssao);
 

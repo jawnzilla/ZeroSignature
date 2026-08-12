@@ -52,6 +52,7 @@ export class Enemy {
     this.rifle = rifle;
     root.add(body, head, this.visor, rifle);
     root.position.copy(this.pos);
+    root.userData._dyn = true; // clean up on new mission
     this.root = root;
     this.muzzle = new THREE.Object3D();
     this.muzzle.position.set(0.3, 1.25, 0.8);
@@ -97,7 +98,7 @@ export class Enemy {
 
     // visuals
     this.root.position.copy(this.pos);
-    this.root.rotation.y = this.yaw;
+    this.root.rotation.y = this.yaw + Math.PI; // +PI so visor/rifle face the facing direction
     this.root.scale.setScalar(this.alive ? 1 : 0.001);
     this.updateVisor();
     this.updateVisionCone(game);
@@ -280,6 +281,7 @@ export class Enemy {
       });
       this.cone = new THREE.Mesh(geo, mat);
       this.cone.rotation.x = Math.PI / 2;
+      this.cone.userData._dyn = true; // clean up on new mission
       this.scene.add(this.cone);
       this.coneMesh = { geo, mat };
     }
@@ -298,7 +300,7 @@ export class Enemy {
     playHit();
     this.detection = Math.min(100, this.detection + 45);
     if (this.detection >= 100) this.enterCombat();
-    if (this.health <= 0) { this.alive = false; this.root.rotation.x = Math.PI / 2; }
+    if (this.health <= 0) { this.alive = false; this.root.rotation.x = Math.PI / 2; if (this.cone) this.cone.visible = false; }
   }
 
   // non-lethal takedown — guard is knocked out and stays down this run

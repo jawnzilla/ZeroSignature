@@ -48,7 +48,7 @@ export class SecurityCamera {
     const geo = new THREE.ConeGeometry(1, 1, 20, 1, true);
     geo.translate(0, 0, -0.5);
     const mat = new THREE.MeshBasicMaterial({
-      color: 0x33ffd0, transparent: true, opacity: 0.05,
+      color: 0x33ffd0, transparent: true, opacity: 0.12,
       side: THREE.DoubleSide, depthWrite: false,
     });
     this.cone = new THREE.Mesh(geo, mat);
@@ -77,7 +77,7 @@ export class SecurityCamera {
     }
     this.ledMat.color.setHex(sees ? 0xffd60a : 0x3ddc84);
     this.cone.material.color.setHex(sees ? 0xffd60a : 0x33ffd0);
-    this.cone.material.opacity = sees ? 0.12 : 0.05;
+    this.cone.material.opacity = sees ? 0.2 : 0.12;
     // cone geometry scale by yaw-relative view: keep fixed length
     const r = this.range;
     this.cone.scale.set(Math.sin(this.coneAngle / 2) * r * 2, r, r);

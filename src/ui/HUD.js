@@ -91,8 +91,8 @@ export class HUD {
     // interact prompt (e.g. takedown)
     this.els.interact.textContent = state.interactText || '';
     this.els.interact.classList.toggle('show', !!state.interactText);
-    // alert vignette
-    const intensity = Math.min(1, det / 100) * (state.anyCombat ? 0.9 : 0.45);
+    // alert vignette — subtle red edge cue, never obscures the view
+    const intensity = Math.min(0.55, (det / 100) * (state.anyCombat ? 0.55 : 0.3));
     this.els.alertVignette.style.opacity = intensity;
   }
 

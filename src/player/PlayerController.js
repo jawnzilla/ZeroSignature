@@ -128,7 +128,7 @@ export class PlayerController {
 
     // update root + gun anim
     this.root.position.set(this.pos.x, 0, this.pos.z);
-    this.root.rotation.y = this.yaw;
+    this.root.rotation.y = this.yaw + Math.PI; // +PI so visor/gun face the aim/move direction
     const bob = wish.lengthSq() > 0 && this.grounded
       ? Math.sin(this.footstepT * Math.PI) * (this.sprinting ? 0.14 : 0.06) : 0;
     const targetEyeY = this.eyeHeight;
