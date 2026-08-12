@@ -7,12 +7,12 @@ export class HUD {
     this.el.id = 'hud';
     this.el.innerHTML = `
       <div id="crosshair"></div>
-      <div id="detect-wrap"><div id="detect-label">!</div><div id="detect-bar"><div id="detect-fill"></div></div></div>
+      <div id="detect-wrap"><div id="detect-eye">◉</div><div id="detect-seg"></div></div>
       <div id="bars">
         <div class="bar-row"><span class="bar-label">HP</span><div class="bar"><div id="hp-fill"></div></div></div>
         <div class="bar-row"><span class="bar-label">ST</span><div class="bar"><div id="st-fill"></div></div></div>
       </div>
-      <div id="weapon">AMMO <span id="ammo">--</span> / <span id="mag">--</span><span id="supp">[SUPPRESSED]</span></div>
+      <div id="weapon"><span class="w-label">AMMO</span> <span id="mag">--</span> <span class="w-arrow">▸</span> <span id="ammo">--</span><span id="supp">[SUPPRESSED]</span></div>
       <div id="intel">INTEL <span id="intel-count">0</span></div>
       <div id="objective"></div>
       <div id="message"></div>
@@ -34,8 +34,9 @@ export class HUD {
     this.els = {
       hp: this.el.querySelector('#hp-fill'),
       st: this.el.querySelector('#st-fill'),
-      detectFill: this.el.querySelector('#detect-fill'),
+      detectSeg: this.el.querySelector('#detect-seg'),
       detectWrap: this.el.querySelector('#detect-wrap'),
+      detectEye: this.el.querySelector('#detect-eye'),
       ammo: this.el.querySelector('#ammo'),
       mag: this.el.querySelector('#mag'),
       supp: this.el.querySelector('#supp'),
@@ -48,6 +49,14 @@ export class HUD {
       upgrades: this.el.querySelector('#upgrades'),
       gameover: this.el.querySelector('#gameover'),
     };
+    // build detection segment pips (8)
+    this.detectPips = [];
+    for (let i = 0; i < 8; i++) {
+      const pip = document.createElement('div');
+      pip.className = 'pip';
+      this.els.detectSeg.appendChild(pip);
+      this.detectPips.push(pip);
+    }
     this.msgTimer = 0;
   }
 
@@ -56,14 +65,21 @@ export class HUD {
     this.els.hp.style.width = `${Math.max(0, p.health) / p.maxHealth * 100}%`;
     this.els.hp.style.background = p.health / p.maxHealth < 0.3 ? '#ff3b30' : '#3ddc84';
     this.els.st.style.width = `${p.stamina / p.maxStamina * 100}%`;
-    // detection
+    // detection — persistent segmented gauge (never opacity-gated)
     const det = state.maxDet;
-    this.els.detectFill.style.width = `${det}%`;
-    this.els.detectWrap.classList.toggle('active', det > 4);
-    this.els.detectFill.style.background = det >= 100 ? '#ff3b30' : det > 60 ? '#ff9f0a' : '#ffd60a';
+    this.els.detectWrap.classList.toggle('active', det > 1);
+    const active = Math.max(0, Math.min(8, Math.ceil(det / 100 * 8)));
+    const dcolor = det >= 100 ? '#ff3b30' : det > 60 ? '#ff9f0a' : det > 20 ? '#ffd60a' : '#3ddc84';
+    for (let i = 0; i < 8; i++) {
+      const on = i < active;
+      this.detectPips[i].classList.toggle('on', on);
+      this.detectPips[i].style.background = on ? dcolor : 'rgba(255,255,255,0.1)';
+    }
+    this.els.detectEye.style.color = det >= 100 ? '#ff3b30' : det > 60 ? '#ff9f0a' : '#eef2f8';
+    this.els.detectWrap.classList.toggle('alert', det >= 100);
     // weapon
-    this.els.ammo.textContent = p.weapon.ammo;
     this.els.mag.textContent = p.weapon.mag;
+    this.els.ammo.textContent = p.weapon.ammo;
     this.els.supp.style.display = (p.weapon.suppressed || p.upgrades.silencer > 0) ? 'inline' : 'none';
     // intel
     this.els.intel.textContent = p.intel;
@@ -98,12 +114,13 @@ export class HUD {
       row.className = 'up-row';
       const can = lvl < def.max;
       const cost = CONFIG_cost(def, lvl);
+      const afford = can && player.intel >= cost;
       row.innerHTML = `
         <div class="up-info">
           <div class="up-name">${def.name} <span class="up-lvl">${'■'.repeat(lvl)}${'□'.repeat(def.max - lvl)}</span></div>
           <div class="up-desc">${def.desc}</div>
         </div>
-        <button class="up-buy" ${can ? '' : 'disabled'} data-id="${def.id}">${can ? `$${cost}` : 'MAX'}</button>
+        <button class="up-buy ${afford ? 'can' : ''}" ${can ? '' : 'disabled'} ${can && !afford ? 'data-broke="1"' : ''} data-id="${def.id}">${can ? `◈ ${cost}` : 'MAX'}</button>
       `;
       const btn = row.querySelector('.up-buy');
       btn.addEventListener('click', () => {

@@ -49,7 +49,7 @@ export function generateWorld(seed) {
   // ---- obstacles (cover) inside rooms ----
   const obstacleCells = [];
   for (const r of rooms) {
-    const count = randInt(rng, 2, 5);
+    const count = randInt(rng, 3, 6);
     for (let i = 0; i < count; i++) {
       const cx = randInt(rng, r.x + 1, r.x + r.w - 2);
       const cz = randInt(rng, r.z + 1, r.z + r.h - 2);

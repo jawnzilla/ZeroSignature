@@ -6,7 +6,7 @@ function makeColor(hex, rough, metal, { emissive = null, emissiveIntensity = 1 }
   const m = new THREE.MeshStandardMaterial({
     color: hex, roughness: rough, metalness: metal,
   });
-  if (emissive) { m.emissive = new THREE.Color(emissive); m.emissiveIntensity = emissiveIntensity; }
+  if (emissive) { m.emissive = new THREE.Color(emissive); m.emissiveIntensity = emissiveIntensity; m.toneMapped = false; }
   return m;
 }
 

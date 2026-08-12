@@ -73,11 +73,11 @@ export const CONFIG = {
   },
 
   fx: {
-    bloomStrength: 0.7,
-    bloomRadius: 0.55,
-    bloomThreshold: 0.8,
-    fogColor: 0x080c14,
-    skyColor: 0x060910,
+    bloomStrength: 0.5,
+    bloomRadius: 0.5,
+    bloomThreshold: 0.95,
+    fogColor: 0x0d1522,
+    skyColor: 0x080d16,
   },
 
   upgrade: {

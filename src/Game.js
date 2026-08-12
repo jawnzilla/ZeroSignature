@@ -29,7 +29,7 @@ export class Game {
     container.appendChild(this.renderer.domElement);
 
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.Fog(CONFIG.fx.fogColor, 18, 80);
+    this.scene.fog = new THREE.Fog(CONFIG.fx.fogColor, 24, 110);
     this.scene.background = new THREE.Color(CONFIG.fx.skyColor);
     this.scene.userData = {};
 
@@ -67,13 +67,14 @@ export class Game {
   }
 
   addRoomLights(world) {
-    for (const r of world.rooms) {
+    const hues = [0xffb86b, 0xff9f4a, 0xffcf7a, 0xe8b25a, 0xffa35c, 0xffc07a, 0xffb060];
+    world.rooms.forEach((r, i) => {
       const x = (r.x + r.w / 2) * world.cell;
       const z = (r.z + r.h / 2) * world.cell;
-      const pl = new THREE.PointLight(0xffb86b, 11, 26, 1.8);
+      const pl = new THREE.PointLight(hues[i % hues.length], 4, 20, 2);
       pl.position.set(x, world.wallH - 0.6, z);
       this.scene.add(pl);
-    }
+    });
   }
 
   buildMission(seed, missionNo) {
@@ -113,7 +114,7 @@ export class Game {
 
     this.missionComplete = false;
     this.anyCombat = false;
-    this.objText = `MISSION ${String(missionNo || this.difficulty).padStart(2, '0')} — RECOVER THE ZERO SIGNATURE (seed ${seed})`;
+    this.objText = `MISSION ${String(missionNo || this.difficulty).padStart(2, '0')} — RECOVER THE ZERO SIGNATURE`;
     this.hud.objectiveText = this.objText;
   }
 
@@ -282,7 +283,7 @@ export class Game {
     const seed = (CONFIG.seed + this.difficulty * 977) >>> 0;
     this.buildMission(seed, this.difficulty);
     this.hud.message(`MISSION ${String(this.difficulty).padStart(2, '0')} — SEED ${seed}`, 3);
-    this.hud.objectiveText = `MISSION ${String(this.difficulty).padStart(2, '0')} — RECOVER THE ZERO SIGNATURE (seed ${seed})`;
+    this.hud.objectiveText = `MISSION ${String(this.difficulty).padStart(2, '0')} — RECOVER THE ZERO SIGNATURE`;
   }
 
   onResize() {

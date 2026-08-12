@@ -17,18 +17,25 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #05070d; f
 
 #hud { position: fixed; inset: 0; pointer-events: none; z-index: 10; }
 #crosshair {
-  position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px;
-  border-radius: 50%; background: rgba(255,255,255,.85); box-shadow: 0 0 6px rgba(0,0,0,.8);
+  position: absolute; left: 50%; top: 50%; width: 8px; height: 8px; margin: -4px;
+  border-radius: 50%; background: rgba(255,255,255,.9);
+  box-shadow: 0 0 0 1px rgba(0,0,0,.7), 0 0 6px rgba(0,0,0,.9), 0 0 12px rgba(79,195,255,.35);
 }
 
+/* persistent segmented detection gauge — bottom-center, always visible */
 #detect-wrap {
-  position: absolute; left: 50%; top: 18%; transform: translateX(-50%);
-  display: flex; align-items: center; gap: 8px; opacity: 0; transition: opacity .25s;
+  position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 14px; border-radius: 24px;
+  background: rgba(5,8,15,.55); border: 1px solid rgba(255,255,255,.12);
+  backdrop-filter: blur(4px); opacity: .35; transition: opacity .25s;
 }
 #detect-wrap.active { opacity: 1; }
-#detect-label { font-size: 18px; font-weight: 700; color: #ffd60a; text-shadow: 0 0 8px rgba(255,214,10,.8); animation: pulse 1s infinite; }
-#detect-bar { width: 180px; height: 10px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.25); border-radius: 5px; overflow: hidden; }
-#detect-fill { height: 100%; width: 0; background: #ffd60a; transition: width .15s linear; }
+#detect-wrap.alert { animation: dmgflash .6s ease-out; border-color: rgba(255,59,48,.7); }
+#detect-eye { font-size: 15px; line-height: 1; color: #eef2f8; text-shadow: 0 0 8px rgba(0,0,0,.8); }
+#detect-seg { display: flex; gap: 4px; }
+#detect-seg .pip { width: 14px; height: 8px; border-radius: 2px; background: rgba(255,255,255,.1); transition: background .12s; }
+#detect-seg .pip.on { box-shadow: 0 0 6px currentColor; }
 
 #bars { position: absolute; left: 28px; bottom: 30px; display: flex; flex-direction: column; gap: 8px; width: 240px; }
 .bar-row { display: flex; align-items: center; gap: 8px; }
@@ -38,7 +45,10 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #05070d; f
 #st-fill { background: #4fc3ff !important; }
 
 #weapon { position: absolute; right: 28px; bottom: 30px; text-align: right; font-size: 15px; letter-spacing: 2px; color: #d7e0ef; text-shadow: 0 0 8px rgba(0,0,0,.9); }
+#weapon .w-label { font-size: 11px; color: #7f8ea6; letter-spacing: 2px; }
+#weapon .w-arrow { color: #7f8ea6; margin: 0 4px; }
 #weapon #mag { color: #fff; font-weight: 700; }
+#weapon #ammo { color: #9fb0c8; }
 #supp { display: none; margin-left: 10px; color: #3ddc84; font-size: 12px; letter-spacing: 1px; }
 #intel { position: absolute; right: 28px; top: 22px; font-size: 14px; letter-spacing: 2px; color: #4fc3ff; text-shadow: 0 0 8px rgba(0,0,0,.9); }
 #intel-count { font-weight: 700; color: #fff; }
@@ -96,6 +106,7 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #05070d; f
 .up-desc { font-size: 12px; color: #7f8ea6; margin-top: 2px; }
 .up-buy { pointer-events: auto; padding: 8px 16px; border: none; border-radius: 6px; background: #2a8a55; color: #fff; font-weight: 700; cursor: pointer; }
 .up-buy:disabled { background: #1b2438; color: #5d6b82; cursor: default; }
+.up-buy[data-broke] { background: #232a3a; color: #8a93a6; cursor: default; }
 .up-buy:not(:disabled):hover { background: #34b06b; }
 
 #gameover {
