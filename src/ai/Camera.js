@@ -24,20 +24,22 @@ export class SecurityCamera {
 
   buildMesh(scene, mats) {
     const g = new THREE.Group();
-    // body + lens
+    // body group scaled up ~1.6x so the camera reads as a clear prop
+    const bodyG = new THREE.Group();
+    bodyG.scale.setScalar(1.6);
     const body = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.15, 0.32), mats.metal);
     const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.07, 0.06, 10), mats.gunAccent);
     lens.rotation.x = Math.PI / 2; lens.position.z = 0.17;
-    // status LED
+    // status LED (brighter, bigger)
     this.ledMat = new THREE.MeshBasicMaterial({ color: 0x3ddc84 });
-    const led = new THREE.Mesh(new THREE.SphereGeometry(0.025, 8, 8), this.ledMat);
-    led.position.set(0, 0.1, 0);
-    // mount arm + wall base
+    const led = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8), this.ledMat);
+    led.position.set(0, 0.11, 0);
     const arm = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.45, 0.06), mats.metalDark);
     arm.position.y = -0.3;
     const base = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.09, 0.3), mats.metalDark);
     base.position.y = -0.52;
-    g.add(body, lens, led, arm, base);
+    bodyG.add(body, lens, led, arm, base);
+    g.add(bodyG);
     g.position.copy(this.pos);
     g.userData._dyn = true;
     g.castShadow = true;

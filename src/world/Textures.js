@@ -111,7 +111,10 @@ export function buildTextures() {
     }
   });
 
-  // shared maps per material set
-  for (const k of Object.keys(texs)) texs[k].needsUpdate = true;
+  // shared maps per material set — tile so detail is visible (not stretched 1 tile / cell)
+  for (const k of Object.keys(texs)) {
+    texs[k].repeat.set(3, 3);
+    texs[k].needsUpdate = true;
+  }
   return texs;
 }

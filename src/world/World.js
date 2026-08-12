@@ -295,20 +295,24 @@ function buildDressing(world, mats, rng) {
     put(box(w * 0.6, 0.04, d * 0.6), mats.metalDark, x, h + 0.05, z, ry);
   }
 
-  // scatter small crates/barrels/consoles in rooms
+  // scatter small crates/barrels/consoles/pipes in rooms
   for (const r of world.rooms) {
     const sx = r.x, sz = r.z;
-    const n = 3;
+    const n = 6;
     for (let i = 0; i < n; i++) {
       const cx = randInt(rng, sx, sx + r.w - 1), cz = randInt(rng, sz, sz + r.h - 1);
       if (grid[cz][cx] !== 1) continue;
       const x = cx * cell + cell / 2 + randRange(rng, -1, 1), z = cz * cell + cell / 2 + randRange(rng, -1, 1);
       const k = rng();
-      if (k < 0.45) put(box(0.9, 0.9, 0.9), mats.crateWood, x, 0.45, z, rng() * Math.PI);
-      else if (k < 0.7) put(box(0.7, 1.15, 0.7), mats.metalDark, x, 0.57, z);
-      else if (k < 0.85) { // console w/ glowing screen
+      if (k < 0.34) put(box(0.9, 0.9, 0.9), mats.crateWood, x, 0.45, z, rng() * Math.PI);
+      else if (k < 0.55) put(box(0.7, 1.15, 0.7), mats.metalDark, x, 0.57, z);
+      else if (k < 0.7) { // console w/ glowing screen
         put(box(1.4, 0.12, 0.7), mats.console, x, 0.06, z);
         put(box(1.1, 0.05, 0.5), mats.screenGlow, x, 0.15, z);
+      } else if (k < 0.82) { // pipe run along the floor
+        const horiz = rng() < 0.5;
+        put(box(horiz ? 2.4 : 0.09, 0.09, horiz ? 0.09 : 2.4), mats.pipe, x, 0.24, z, 0);
+        put(box(horiz ? 2.4 : 0.09, 0.12, horiz ? 0.12 : 2.4), mats.pipeValve, x, 0.28, z, 0);
       } else { // barrel
         put(box(0.5, 1.0, 0.5), mats.accent, x, 0.5, z);
       }

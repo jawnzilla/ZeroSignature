@@ -26,11 +26,11 @@ export class Game {
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     // Filmic tone mapping lifts crushed shadows and gives a film-like rolloff.
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.15;
+    this.renderer.toneMappingExposure = 1.45;
     container.appendChild(this.renderer.domElement);
 
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.Fog(CONFIG.fx.fogColor, 24, 110);
+    this.scene.fog = new THREE.Fog(CONFIG.fx.fogColor, 18, 80);
     this.scene.background = new THREE.Color(CONFIG.fx.skyColor);
     this.scene.userData = {};
 
@@ -52,11 +52,11 @@ export class Game {
   }
 
   setupLights() {
-    const hemi = new THREE.HemisphereLight(0x4d5fd0, 0x0c0c12, 1.0);
+    const hemi = new THREE.HemisphereLight(0x4d5fd0, 0x0c0c12, 1.2);
     this.scene.add(hemi);
-    const ambient = new THREE.AmbientLight(0x1a2030, 0.95);
+    const ambient = new THREE.AmbientLight(0x1a2030, 1.15);
     this.scene.add(ambient);
-    const moon = new THREE.DirectionalLight(0x93a4ff, 1.25);
+    const moon = new THREE.DirectionalLight(0x93a4ff, 1.35);
     moon.position.set(-30, 60, -20);
     moon.castShadow = true;
     moon.shadow.mapSize.set(2048, 2048);
@@ -72,7 +72,7 @@ export class Game {
     world.rooms.forEach((r, i) => {
       const x = (r.x + r.w / 2) * world.cell;
       const z = (r.z + r.h / 2) * world.cell;
-      const pl = new THREE.PointLight(hues[i % hues.length], 4, 20, 2);
+      const pl = new THREE.PointLight(hues[i % hues.length], 6, 24, 1.6);
       pl.position.set(x, world.wallH - 0.6, z);
       this.scene.add(pl);
     });
@@ -300,7 +300,13 @@ export class Game {
     let maxDet = 0;
     for (const e of this.enemyManager.enemies) { if (e.alive) maxDet = Math.max(maxDet, e.detection); if (e.state === 'COMBAT') this.anyCombat = true; }
     if (this.cameraManager) maxDet = Math.max(maxDet, this.cameraManager.maxDetection());
-    if (!this.player.alive) { maxDet = 100; this.anyCombat = true; this.hud.showGameOver(); this.renderer.setAnimationLoop(null); }
+    if (!this.player.alive) {
+      maxDet = 100; this.anyCombat = true; this.hud.showGameOver();
+      // release pointer lock so the player can move the cursor to the NEW MISSION button
+      if (document.pointerLockElement) document.exitPointerLock();
+      this.input.locked = false;
+      this.renderer.setAnimationLoop(null);
+    }
 
     this.interactTarget = this.nearestUnawareEnemy(2.2);
     this.hud.update({ player: this.player, maxDet, anyCombat: this.anyCombat, missionComplete: this.missionComplete, objectiveText: this.hud.objectiveText, interactText: this.interactTarget ? 'E — KNOCK OUT' : '' });
