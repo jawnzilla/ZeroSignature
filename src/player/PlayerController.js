@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { CONFIG } from '../config.js';
 import { solidAt } from '../world/World.js';
+import { makeHumanoid } from '../world/Humanoid.js';
 import { playFootstep, playStep } from '../systems/Audio.js';
 
 const P = CONFIG.player;
@@ -22,22 +23,12 @@ export class PlayerController {
     this.footstepT = 0;
     this.eyeBase = P.eyeHeight;
 
-    // build player mesh
+    // build player mesh — a readable low-poly humanoid
     this.root = new THREE.Group();
     this.root.position.copy(this.pos);
-    // body
-    const body = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.1, 0.4), scene.userData.mats.player);
-    body.position.y = 0.85; body.castShadow = true;
-    // head
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.24, 16, 12), scene.userData.mats.player);
-    head.position.y = 1.55; head.castShadow = true;
-    // visor
-    const visor = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.1, 0.16), scene.userData.mats.playerVisor);
-    visor.position.set(0, 1.58, 0.2); visor.castShadow = true;
-    // gun (held, animated in weapon module)
-    this.gunMount = new THREE.Group();
-    this.gunMount.position.set(0.28, 1.05, 0.15);
-    this.root.add(body, head, visor, this.gunMount);
+    const h = makeHumanoid(scene.userData.mats, { bodyColor: 'player', visorColor: 'playerVisor', gear: true });
+    this.root.add(h.root);
+    this.gunMount = h.gunMount;
     this.root.position.y = 0;
     scene.add(this.root);
 
@@ -51,6 +42,9 @@ export class PlayerController {
     this.alive = true;
     this.detection = 0;        // 0..100 currently seen
     this.detectionActive = false;
+    this.dashTimer = 0;        // dodge/roll
+    this.invulnT = 0;          // brief damage immunity during/after a dodge
+    this.dashDir = null;
   }
 
   get moveSpeed() {
@@ -70,8 +64,23 @@ export class PlayerController {
   get sneakMult() { return Math.max(0.4, 1 - this.upgrades.shadow * 0.18); }
   get eyeHeight() { return this.crouching ? P.crouchEye : P.eyeHeight; }
 
+  // quick protective move — a short dash with i-frames
+  startDash(input) {
+    if (this.dashTimer > 0 || !this.alive) return;
+    // dash in the current input direction (fall back to facing)
+    const forward = new THREE.Vector3(-Math.sin(this.yaw), 0, -Math.cos(this.yaw));
+    const right = new THREE.Vector3(Math.cos(this.yaw), 0, -Math.sin(this.yaw));
+    const d = new THREE.Vector3();
+    d.addScaledVector(forward, (input.keys['KeyW'] ? 1 : 0) - (input.keys['KeyS'] ? 1 : 0));
+    d.addScaledVector(right, (input.keys['KeyD'] ? 1 : 0) - (input.keys['KeyA'] ? 1 : 0));
+    this.dashDir = (d.lengthSq() > 0 ? d.normalize() : forward).clone();
+    this.dashTimer = 0.22;
+    this.invulnT = 0.42;
+  }
+
   damage(n) {
     if (!this.alive) return;
+    if (this.invulnT > 0) return; // dodging — invulnerable
     this.health -= n;
     if (this.health <= 0) { this.health = 0; this.alive = false; }
   }
@@ -99,19 +108,23 @@ export class PlayerController {
     if (this.sprinting) this.stamina = Math.max(0, this.stamina - P.staminaDrain * dt);
     else this.stamina = Math.min(this.maxStamina, this.stamina + P.staminaRegen * dt);
 
-    // target velocity
+    // target velocity (dash overrides normal movement with i-frames)
+    this.invulnT = Math.max(0, this.invulnT - dt);
     const spd = this.moveSpeed;
-    const targetVX = wish.x * spd;
-    const targetVZ = wish.z * spd;
+    const dashing = this.dashTimer > 0;
+    if (dashing) this.dashTimer -= dt;
+    const targetVX = dashing ? this.dashDir.x * 9.5 : wish.x * spd;
+    const targetVZ = dashing ? this.dashDir.z * 9.5 : wish.z * spd;
+    const acc = dashing ? 260 : P.accel;
 
     // X move with collision
-    this.vel.x = approach(this.vel.x, targetVX, P.accel * dt);
+    this.vel.x = approach(this.vel.x, targetVX, acc * dt);
     const nx = this.pos.x + this.vel.x * dt;
     if (!solidAt(this.world.grid, nx, this.pos.z, P.radius)) this.pos.x = nx;
     else this.vel.x = 0;
 
     // Z move
-    this.vel.z = approach(this.vel.z, targetVZ, P.accel * dt);
+    this.vel.z = approach(this.vel.z, targetVZ, acc * dt);
     const nz = this.pos.z + this.vel.z * dt;
     if (!solidAt(this.world.grid, this.pos.x, nz, P.radius)) this.pos.z = nz;
     else this.vel.z = 0;

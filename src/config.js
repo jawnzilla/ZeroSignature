@@ -17,7 +17,7 @@ export const CONFIG = {
     sprintSpeed: 6.2,
     crouchSpeed: 2.0,
     crouchScale: 0.62,       // scale height when crouched
-    accel: 26,
+    accel: 38,
     friction: 10,
     maxHealth: 100,
     maxStamina: 100,

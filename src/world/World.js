@@ -319,6 +319,32 @@ function buildDressing(world, mats, rng) {
     }
   }
 
+  // per-room purpose dressing so each room reads as a distinct real space
+  for (let ri = 0; ri < world.rooms.length; ri++) {
+    const r = world.rooms[ri];
+    const type = ri % 4;
+    const ax = (r.x + r.w / 2) * cell;
+    const az = (r.z + 1) * cell + 0.6;
+    const rack = (dx, w, h, d, mat) => put(box(w, h, d), mat || mats.metal, ax + dx, h / 2, az, 0);
+    if (type === 0) {            // storage racks
+      for (let i = -1; i <= 1; i++) rack(i * 1.2, 0.55, 2.5, 1.0);
+      put(box(3.0, 0.2, 1.1), mats.crateWood, ax, 2.6, az, 0);
+    } else if (type === 1) {     // control station
+      put(box(2.3, 0.15, 0.7), mats.console, ax, 0.07, az);
+      put(box(2.0, 0.06, 0.55), mats.screenGlow, ax, 0.18, az);
+      put(box(1.1, 0.55, 0.4), mats.metal, ax + 1.6, 0.27, az, Math.PI / 2);
+    } else if (type === 2) {     // server banks
+      for (let i = 0; i < 3; i++) {
+        rack((i - 1) * 0.9, 0.6, 2.4, 0.9, mats.metalDark);
+        put(box(0.42, 0.05, 0.7), mats.screenGlow, ax + (i - 1) * 0.9, 0.6, az);
+      }
+    } else {                     // workshop
+      put(box(2.1, 0.12, 0.8), mats.crateWood, ax, 0.5, az);
+      put(box(1.2, 0.9, 0.6), mats.metal, ax - 1.4, 0.45, az);
+      put(box(0.5, 1.1, 0.5), mats.accent, ax + 1.5, 0.55, az);
+    }
+  }
+
   // ceiling hanging lamps in rooms (warm pools for bloom)
   for (const r of world.rooms) {
     const lx = (r.x + r.w / 2) * cell, lz = (r.z + r.h / 2) * cell;

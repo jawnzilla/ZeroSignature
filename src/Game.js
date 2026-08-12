@@ -64,6 +64,10 @@ export class Game {
     moon.shadow.camera.top = 40; moon.shadow.camera.bottom = -40;
     moon.shadow.camera.far = 140;
     this.scene.add(moon);
+    // cool rim/back light — gives edges definition so low-poly geometry reads as a deliberate style
+    const rim = new THREE.DirectionalLight(0x3d5bd8, 0.55);
+    rim.position.set(40, -5, 30);
+    this.scene.add(rim);
     this.moon = moon;
   }
 
@@ -166,6 +170,7 @@ export class Game {
       if (e.code === 'Tab') { e.preventDefault(); this.toggleUpgrades(); }
       if (e.code === 'KeyR') this.weapon.reload();
       if (e.code === 'KeyE') this.attemptTakedown();
+      if (e.code === 'KeyQ') this.player.startDash(this.input);
       if (e.code === 'KeyT') this.toggleSuppressor();
       if (e.code === 'KeyG' && this.missionComplete) this.newMission();
       if (e.code === 'KeyM') this.toggleMute();

@@ -18,7 +18,7 @@ export class HUD {
       <div id="message"></div>
       <div id="interact"></div>
       <div id="controls">
-        WASD move · Shift sprint · Ctrl crouch · Click shoot · E knock out<br>
+        WASD move · Shift sprint · Ctrl crouch · Q dodge · E knock out<br>
         R reload · T suppressor · Tab upgrades · G new mission
       </div>
       <div id="alert-vignette"></div>

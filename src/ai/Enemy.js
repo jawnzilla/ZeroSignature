@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { CONFIG } from '../config.js';
 import { solidAt, losClear, findPath } from '../world/World.js';
+import { makeHumanoid } from '../world/Humanoid.js';
 import { playAlert, playHit } from '../systems/Audio.js';
 
 const AI = CONFIG.ai;
@@ -27,36 +28,35 @@ export class Enemy {
     this.fireTimer = 0;
     this.losFlash = 0;
     this.down = false;          // non-lethal knocked out (stays out this run)
+    this.pathTimer = 0;         // combat re-path cadence
+    this.strafeT = 0;           // strafe flip timer
+    this.strafeDir = 1;
+    this.lostT = 0;             // time since losing sight in combat
 
     this.buildMesh();
     this.scene.add(this.root);
   }
 
   buildMesh() {
-    const root = new THREE.Group();
-    const visorMat = this.mats.enemyVisor;
-    const body = new THREE.Mesh(new THREE.BoxGeometry(0.72, 1.15, 0.42), this.mats.enemy);
-    body.position.y = 0.9; body.castShadow = true;
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.24, 14, 12), this.mats.enemy);
-    head.position.y = 1.62; head.castShadow = true;
-    this.visor = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.1, 0.18), visorMat);
-    this.visor.position.set(0, 1.66, 0.22); this.visor.castShadow = true;
-    // rifle
+    const h = makeHumanoid(this.mats, { bodyColor: 'enemy', visorColor: 'enemyVisor', gear: true });
+    this.root = h.root;
+    this.root.position.copy(this.pos);
+    this.root.userData._dyn = true;
+    this.visor = h.visor;
+    // rifle mounted at the humanoid's front gun mount
     const rifle = new THREE.Group();
     const barrel = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.08, 0.9), this.mats.gun);
     barrel.position.set(0, 0, 0.2);
     const body2 = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.12, 0.5), this.mats.gun);
     body2.position.set(0, 0, -0.2);
     rifle.add(barrel, body2);
-    rifle.position.set(0.3, 1.1, 0.25);
     this.rifle = rifle;
-    root.add(body, head, this.visor, rifle);
-    root.position.copy(this.pos);
-    root.userData._dyn = true; // clean up on new mission
-    this.root = root;
+    h.gunMount.add(rifle);
+    // muzzle for tracer origin
     this.muzzle = new THREE.Object3D();
-    this.muzzle.position.set(0.3, 1.25, 0.8);
-    root.add(this.muzzle);
+    this.muzzle.position.set(0.2, 0, 0.7);
+    h.gunMount.add(this.muzzle);
+    this.scene.add(this.root);
     this.alertPulse = 0;
   }
 
@@ -211,22 +211,41 @@ export class Enemy {
     const p = this.player;
     if (!p.alive) { this.state = 'SEARCH'; this.stateTime = 0; return; }
     const d = this.pos.distanceTo(p.pos);
+    const dx = p.pos.x - this.pos.x, dz = p.pos.z - this.pos.z;
     // face player
-    const targetYaw = Math.atan2(-(p.pos.x - this.pos.x), -(p.pos.z - this.pos.z));
+    const targetYaw = Math.atan2(-dx, -dz);
     this.yaw = lerpAngle(this.yaw, targetYaw, AI.turnSpeed * dt);
-    // engage: move to within firing range, shoot
-    if (d > 18) {
-      if (this.path.length === 0) {
-        this.path = findPath(this.world.grid, this.pos.x, this.pos.z, p.pos.x, p.pos.z);
-        this.pathIndex = 0;
+    // flip strafe direction periodically so they move, not stand still
+    this.strafeT -= dt;
+    if (this.strafeT <= 0) { this.strafeT = 1.6; this.strafeDir *= -1; }
+    // re-path a combat position every 0.35s: advance/retreat to range, strafing
+    this.pathTimer -= dt;
+    if (this.pathTimer <= 0 && d > 2) {
+      this.pathTimer = 0.35;
+      const ideal = 9;
+      let tx, tz;
+      if (d > ideal + 2) {            // too far -> close in
+        const nx = dx / d, nz = dz / d;
+        tx = p.pos.x - nx * ideal; tz = p.pos.z - nz * ideal;
+      } else if (d < ideal - 3) {     // too close -> back off a little
+        const nx = dx / d, nz = dz / d;
+        tx = p.pos.x + nx * 3; tz = p.pos.z + nz * 3;
+      } else {                        // in range -> hold ground
+        tx = this.pos.x; tz = this.pos.z;
       }
+      // perpendicular strafe so they aren't a static target
+      const px = -dz / d, pz = dx / d;
+      tx += px * this.strafeDir * 3; tz += pz * this.strafeDir * 3;
+      this.path = findPath(this.world.grid, this.pos.x, this.pos.z, tx, tz);
+      this.pathIndex = 0;
     }
+    // shoot while the player is in sight
     if (this.seePlayer()) {
+      this.lostT = 0;
       this.fireTimer -= dt;
       if (this.fireTimer <= 0) {
         this.fireTimer = AI.fireInterval;
         game.spawnEnemyTracer(this.muzzle, p.pos);
-        // hit chance
         const hitP = Math.max(0.08, 1 - d / AI.fireRange);
         if (Math.random() < hitP) {
           p.damage(AI.fireDamage);
@@ -234,8 +253,9 @@ export class Enemy {
         }
       }
     } else {
-      // lost sight in combat -> SEARCH last known
-      this.state = 'SEARCH'; this.stateTime = 0; this.detection = 40;
+      // lost sight in combat: give them a beat to re-acquire, then search last known
+      this.lostT += dt;
+      if (this.lostT > 1.1) { this.state = 'SEARCH'; this.stateTime = 0; this.detection = 50; }
     }
   }
 
@@ -295,11 +315,12 @@ export class Enemy {
   }
 
   damage(n) {
-    if (!this.alive) return;
+    if (!this.alive || this.down) return;
     this.health -= n;
     playHit();
-    this.detection = Math.min(100, this.detection + 45);
-    if (this.detection >= 100) this.enterCombat();
+    // being shot always snaps them into combat — they don't shrug off being hit
+    this.enterCombat();
+    this.lostT = 0;
     if (this.health <= 0) { this.alive = false; this.root.rotation.x = Math.PI / 2; if (this.cone) this.cone.visible = false; }
   }
 
