@@ -5,6 +5,7 @@ import { generateWorld, buildMesh } from './world/World.js';
 import { setupPostFX } from './systems/PostFX.js';
 import { PlayerController } from './player/PlayerController.js';
 import { Enemy, EnemyManager } from './ai/Enemy.js';
+import { SecurityCamera, CameraManager } from './ai/Camera.js';
 import { Weapon } from './combat/Weapon.js';
 import { HUD } from './ui/HUD.js';
 import { initAudio, resumeAudio, playPickup, playAlert, toggleMute } from './systems/Audio.js';
@@ -43,7 +44,7 @@ export class Game {
 
     this.initInput();
     this.buildMission(CONFIG.seed);
-    this.hud.message('MISSION 01 — Recover the Zero Signature. Stay undetected.', 4);
+    this.hud.message('MISSION 01 — Recover the Zero Signature. Stay undetected — security cameras and guards patrol every room.', 4.5);
 
     this.clock = new THREE.Clock();
     this.renderer.setAnimationLoop(() => this.tick());
@@ -108,6 +109,11 @@ export class Game {
     this.enemyManager.spawn(count, world.waypoints);
     this.scene.userData.enemies = this.enemyManager.enemies;
     this.scene.userData.game = this;
+
+    // security cameras
+    this.cameraManager = new CameraManager(this.scene, world, this.player, built.mats);
+    this.cameraManager.spawnForRooms(world.rooms);
+    this.scene.userData.cameras = this.cameraManager.cameras;
 
     this.spawnIntel(world);
     this.spawnObjective(world);
@@ -228,6 +234,17 @@ export class Game {
 
   onPlayerHit() { this.hud.flashDamage(); }
 
+  onCameraAlert(pos) {
+    // a camera locked on: the whole facility knows (classic MGS behaviour) —
+    // every live guard enters combat and converges on the camera area
+    for (const e of this.enemyManager.enemies) {
+      if (!e.alive || e.state === 'COMBAT') continue;
+      e.enterCombat();
+      e.targetPos = pos.clone();
+    }
+    this.hud.message('CAMERA ALERT', 1.8);
+  }
+
   tick() {
     try {
     const dt = Math.min(this.clock.getDelta(), 0.05);
@@ -242,9 +259,10 @@ export class Game {
     this.input.mouseDX = 0; this.input.mouseDY = 0;
     this.weapon.update(dt);
 
-    // enemy AI
+    // enemy AI + security cameras
     this.anyCombat = false;
     this.enemyManager.update(dt, this);
+    if (this.cameraManager) this.cameraManager.update(dt, this);
 
     // intel pickups
     for (const g of [...this.intelPickups]) {
@@ -262,6 +280,7 @@ export class Game {
     // detection aggregation for HUD
     let maxDet = 0;
     for (const e of this.enemyManager.enemies) { if (e.alive) maxDet = Math.max(maxDet, e.detection); if (e.state === 'COMBAT') this.anyCombat = true; }
+    if (this.cameraManager) maxDet = Math.max(maxDet, this.cameraManager.maxDetection());
     if (!this.player.alive) { maxDet = 100; this.anyCombat = true; this.hud.showGameOver(); this.renderer.setAnimationLoop(null); }
 
     this.hud.update({ player: this.player, maxDet, anyCombat: this.anyCombat, missionComplete: this.missionComplete, objectiveText: this.hud.objectiveText });

@@ -115,6 +115,9 @@ export class Weapon {
     if (impact.enemy) {
       impact.enemy.damage(W.damage);
     }
+    if (impact.camera) {
+      impact.camera.damage();
+    }
     this.spawnImpact(impact);
   }
 
@@ -134,6 +137,20 @@ export class Weapon {
       const perp = toE.lengthSq() - proj * proj;
       if (perp < 1.0) { best = e; bestDist = proj; }
     }
+    // security cameras (destructible)
+    const cams = this.scene.userData.cameras;
+    if (cams) {
+      for (const c of cams) {
+        if (c.status === 'disabled') continue;
+        const d = origin.distanceTo(c.pos);
+        if (d > bestDist) continue;
+        const toC = c.pos.clone().sub(origin);
+        const proj = toC.dot(dir);
+        if (proj < 0 || proj > bestDist) continue;
+        const perp = toC.lengthSq() - proj * proj;
+        if (perp < 0.5) { best = c; bestDist = proj; }
+      }
+    }
     // walls: sample grid along ray until solid
     let wallHit = false;
     const steps = Math.floor(bestDist / 0.6);
@@ -143,10 +160,10 @@ export class Weapon {
       const g = this.player.world.grid;
       if (cx < 0 || cz < 0 || cx >= g[0].length || cz >= g.length || g[cz][cx] === 0) {
         wallHit = true;
-        return { point: p, enemy: null, wall: true };
+        return { point: p, enemy: null, camera: null, wall: true };
       }
     }
-    return { point: origin.clone().add(dir.multiplyScalar(bestDist)), enemy: best, wall: wallHit };
+    return { point: origin.clone().add(dir.multiplyScalar(bestDist)), enemy: (best && best.status === undefined ? best : null), camera: (best && best.status !== undefined ? best : null), wall: wallHit };
   }
 
   spawnTracer(start, end) {

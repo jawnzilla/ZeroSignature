@@ -138,14 +138,16 @@ export function solidAt(grid, x, z, r = 0.3) {
   return false;
 }
 
-// Bresenham LOS on grid — returns false if blocked by obstacle/void
+// Bresenham LOS on grid — returns false if blocked by obstacle/void.
+// Inputs are world metres; we convert to grid cells (S = cell size).
 export function losClear(grid, x0, z0, x1, z1) {
-  const steps = Math.max(Math.abs(x1 - x0), Math.abs(z1 - z0));
+  const sx = x0 / S, sz = z0 / S, ex = x1 / S, ez = z1 / S;
+  const steps = Math.max(Math.abs(ex - sx), Math.abs(ez - sz));
   if (steps === 0) return true;
   for (let i = 0; i <= steps; i++) {
     const t = i / steps;
-    const cx = Math.round(x0 + (x1 - x0) * t);
-    const cz = Math.round(z0 + (z1 - z0) * t);
+    const cx = Math.round(sx + (ex - sx) * t);
+    const cz = Math.round(sz + (ez - sz) * t);
     if (cx < 0 || cz < 0 || cx >= W || cz >= H) return false;
     const v = grid[cz][cx];
     if (v === 0 || v === 2) return false;
