@@ -34,6 +34,19 @@ export function generateWorld(seed) {
   }
   if (rooms.length < 2) throw new Error('level gen failed');
 
+  // ---- enclose each room with interior walls (doorways are cut below) ----
+  for (const r of rooms) {
+    const x0 = r.x, z0 = r.z, x1 = r.x + r.w - 1, z1 = r.z + r.h - 1;
+    for (let cx = x0; cx <= x1; cx++) {
+      if (grid[z0][cx] === 1) grid[z0][cx] = 0;   // top wall
+      if (grid[z1][cx] === 1) grid[z1][cx] = 0;   // bottom wall
+    }
+    for (let cz = z0; cz <= z1; cz++) {
+      if (grid[cz][x0] === 1) grid[cz][x0] = 0;   // left wall
+      if (grid[cz][x1] === 1) grid[cz][x1] = 0;   // right wall
+    }
+  }
+
   // ---- connect rooms with corridors ----
   for (let i = 1; i < rooms.length; i++) {
     const A = rooms[i - 1], B = rooms[i];
@@ -56,6 +69,9 @@ export function generateWorld(seed) {
       if (grid[cz][cx] === 1) { grid[cz][cx] = 2; obstacleCells.push([cx, cz]); }
     }
   }
+
+  // guarantee every room is reachable (walls + obstacles can seal doorways)
+  reconnectAll(grid);
 
   // ---- nav cells (walkable) ----
   const navCells = [];
@@ -115,6 +131,58 @@ function carveLine(grid, x0, z0, x1, z1) {
     if (x !== x1) x += dx; else if (z !== z1) z += dz;
   }
   if (safe(x1, z1) && grid[z1][x1] === 0) grid[z1][x1] = 1;
+}
+
+// force a walkable Manhattan path (punches through walls/obstacles) — used to
+// guarantee connectivity when interior walls seal a room
+function forcePath(grid, x0, z0, x1, z1) {
+  let x = x0, z = z0;
+  const dx = Math.sign(x1 - x0), dz = Math.sign(z1 - z0);
+  const safe = (cx, cz) => cx >= 0 && cz >= 0 && cx < W && cz < H;
+  let guard = 0;
+  while ((x !== x1 || z !== z1) && guard++ < 2000) {
+    if (safe(x, z)) grid[z][x] = 1;
+    if (x !== x1) x += dx; else if (z !== z1) z += dz;
+  }
+  if (safe(x1, z1)) grid[z1][x1] = 1;
+}
+
+function firstFloor(grid) {
+  for (let cz = 0; cz < H; cz++) for (let cx = 0; cx < W; cx++)
+    if (grid[cz][cx] === 1) return [cx, cz];
+  return null;
+}
+
+// flood fill over walkable (value 1) cells from a start cell
+function floodReach(grid, start) {
+  const seen = new Set();
+  const stack = [start];
+  seen.add(start[1] * W + start[0]);
+  while (stack.length) {
+    const c = stack.pop();
+    for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const nx = c[0] + dx, nz = c[1] + dz;
+      if (nx < 0 || nz < 0 || nx >= W || nz >= H) continue;
+      if (grid[nz][nx] === 1 && !seen.has(nz * W + nx)) { seen.add(nz * W + nx); stack.push([nx, nz]); }
+    }
+  }
+  return seen;
+}
+
+// repeatedly force a doorway from any sealed floor region back to the main one
+function reconnectAll(grid) {
+  const start = firstFloor(grid);
+  if (!start) return;
+  let guard = 0;
+  while (guard++ < 40) {
+    const reach = floodReach(grid, start);
+    let target = null;
+    for (let cz = 0; cz < H && !target; cz++)
+      for (let cx = 0; cx < W; cx++)
+        if (grid[cz][cx] === 1 && !reach.has(cz * W + cx)) { target = [cx, cz]; break; }
+    if (!target) break;
+    forcePath(grid, target[0], target[1], start[0], start[1]);
+  }
 }
 
 function cellCenter([cx, cz]) {
@@ -206,6 +274,11 @@ export function buildMesh(world) {
     return boxCache[k].clone();
   };
 
+  // bounding box of the whole facility (for a continuous roof)
+  let minX = W, maxX = -1, minZ = H, maxZ = -1;
+  for (let cz = 0; cz < H; cz++) for (let cx = 0; cx < W; cx++)
+    if (grid[cz][cx] !== 0) { if (cx < minX) minX = cx; if (cx > maxX) maxX = cx; if (cz < minZ) minZ = cz; if (cz > maxZ) maxZ = cz; }
+
   for (let cz = 0; cz < H; cz++) {
     for (let cx = 0; cx < W; cx++) {
       const v = grid[cz][cx];
@@ -215,9 +288,6 @@ export function buildMesh(world) {
       // floor
       m.makeTranslation(x + S / 2, 0, z + S / 2);
       floorG.push(box(S, 0.25, S).applyMatrix4(m));
-      // ceiling
-      m.makeTranslation(x + S / 2, WH, z + S / 2);
-      ceilG.push(box(S, 0.15, S).applyMatrix4(m));
       // walls along borders with void
       const borders = [
         [1, 0], [-1, 0], [0, 1], [0, -1],
@@ -234,6 +304,24 @@ export function buildMesh(world) {
         m.makeRotationY(ry).multiply(m.makeTranslation(wx, WH / 2, wz));
         wallG.push(box(ww, WH, wd).applyMatrix4(m));
       }
+    }
+  }
+
+  // continuous roof — covers floor + the interior-wall ring (neighbour check),
+  // but not large void gaps so we don't get roofs hanging over nothing
+  for (let cz = 0; cz < H; cz++) {
+    for (let cx = 0; cx < W; cx++) {
+      let covered = grid[cz][cx] !== 0;
+      if (!covered) {
+        for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const nx = cx + dx, nz = cz + dz;
+          if (nx >= 0 && nz >= 0 && nx < W && nz < H && grid[nz][nx] !== 0) { covered = true; break; }
+        }
+      }
+      if (!covered) continue;
+      const m = new THREE.Matrix4();
+      m.makeTranslation(cx * S + S / 2, WH, cz * S + S / 2);
+      ceilG.push(box(S, 0.15, S).applyMatrix4(m));
     }
   }
 

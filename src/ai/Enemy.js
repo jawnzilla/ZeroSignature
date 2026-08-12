@@ -292,26 +292,8 @@ export class Enemy {
   }
 
   updateVisionCone(game) {
-    if (!this.cone) {
-      const geo = new THREE.ConeGeometry(1, 1, 24, 1, true);
-      geo.translate(0, 0, -0.5);
-      const mat = new THREE.MeshBasicMaterial({
-        color: this.state === 'COMBAT' ? 0xff5533 : 0xffc53b,
-        transparent: true, opacity: 0.06, side: THREE.DoubleSide, depthWrite: false,
-      });
-      this.cone = new THREE.Mesh(geo, mat);
-      this.cone.rotation.x = Math.PI / 2;
-      this.cone.userData._dyn = true; // clean up on new mission
-      this.scene.add(this.cone);
-      this.coneMesh = { geo, mat };
-    }
-    const r = AI.viewRange;
-    this.cone.scale.set(Math.sin(AI.viewAngle / 2) * r * 2, r, r);
-    this.cone.position.set(this.pos.x, 0.35, this.pos.z);
-    this.cone.rotation.z = -this.yaw + Math.PI / 2;
-    const targetOpacity = this.state === 'COMBAT' ? 0.12 : this.detection > 40 ? 0.1 : 0.055;
-    this.cone.material.opacity = targetOpacity;
-    this.cone.material.color.set(this.state === 'COMBAT' ? 0xff5533 : 0xffc53b);
+    // Vision cones are not rendered to the player — detection is telegraphed
+    // by the HUD gauge and the enemy's visor LED. Nothing to draw.
   }
 
   damage(n) {

@@ -45,18 +45,7 @@ export class SecurityCamera {
     g.castShadow = true;
     scene.add(g);
     this.root = g;
-
-    // sweep vision cone (child of root so it is cleaned up together)
-    const geo = new THREE.ConeGeometry(1, 1, 20, 1, true);
-    geo.translate(0, 0, -0.5);
-    const mat = new THREE.MeshBasicMaterial({
-      color: 0x33ffd0, transparent: true, opacity: 0.12,
-      side: THREE.DoubleSide, depthWrite: false,
-    });
-    this.cone = new THREE.Mesh(geo, mat);
-    this.cone.rotation.x = Math.PI / 2;
-    this.cone.position.set(0, 0.1, 0.4);
-    g.add(this.cone);
+    this.cone = null; // vision cones are not rendered to the player
   }
 
   update(dt, game) {
@@ -78,11 +67,6 @@ export class SecurityCamera {
       this.detection = Math.max(0, this.detection - 24 * dt);
     }
     this.ledMat.color.setHex(sees ? 0xffd60a : 0x3ddc84);
-    this.cone.material.color.setHex(sees ? 0xffd60a : 0x33ffd0);
-    this.cone.material.opacity = sees ? 0.2 : 0.12;
-    // cone geometry scale by yaw-relative view: keep fixed length
-    const r = this.range;
-    this.cone.scale.set(Math.sin(this.coneAngle / 2) * r * 2, r, r);
   }
 
   seePlayer() {
@@ -102,8 +86,6 @@ export class SecurityCamera {
     this.ledMat.color.setHex(color);
     this.ledMat.opacity = (Math.sin(performance.now() * 0.02 * (1 / speed)) > 0) ? 1 : 0.2;
     this.ledMat.transparent = true;
-    this.cone.material.color.setHex(0xff5533);
-    this.cone.material.opacity = 0.14;
   }
 
   damage() {
@@ -111,7 +93,7 @@ export class SecurityCamera {
     this.status = 'disabled';
     this.detection = 0;
     this.ledMat.color.setHex(0x22242a);
-    this.cone.visible = false;
+    if (this.cone) this.cone.visible = false;
     this.root.rotation.x = -0.4; // tilt down as if knocked out
   }
 }
