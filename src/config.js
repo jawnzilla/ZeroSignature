@@ -76,8 +76,8 @@ export const CONFIG = {
     bloomStrength: 0.7,
     bloomRadius: 0.55,
     bloomThreshold: 0.8,
-    fogColor: 0x070a12,
-    skyColor: 0x05070d,
+    fogColor: 0x080c14,
+    skyColor: 0x060910,
   },
 
   upgrade: {

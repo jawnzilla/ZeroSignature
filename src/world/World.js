@@ -279,7 +279,7 @@ function buildDressing(world, mats, rng) {
     const w = tall ? 1.4 : 2.2, h = tall ? 3.4 : 1.6, d = tall ? 1.4 : 2.2;
     put(box(w, h, d), rng() < 0.5 ? mats.metal : mats.crateWood, x, h / 2, z, ry);
     // hazard stripe band on some
-    if (rng() < 0.6) put(box(w + 0.05, 0.25, d + 0.05), mats.hazard, x, h * 0.45, z, ry);
+    if (rng() < 0.35) put(box(w + 0.05, 0.25, d + 0.05), mats.hazard, x, h * 0.45, z, ry);
     // top vent lines
     put(box(w * 0.6, 0.04, d * 0.6), mats.metalDark, x, h + 0.05, z, ry);
   }

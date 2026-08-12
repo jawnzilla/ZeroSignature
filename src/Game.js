@@ -22,7 +22,10 @@ export class Game {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setSize(container.clientWidth, container.clientHeight);
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.type = THREE.PCFShadowMap;
+    // Filmic tone mapping lifts crushed shadows and gives a film-like rolloff.
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.15;
     container.appendChild(this.renderer.domElement);
 
     this.scene = new THREE.Scene();
@@ -48,11 +51,11 @@ export class Game {
   }
 
   setupLights() {
-    const hemi = new THREE.HemisphereLight(0x4455cc, 0x0a0a0f, 0.75);
+    const hemi = new THREE.HemisphereLight(0x4d5fd0, 0x0c0c12, 1.0);
     this.scene.add(hemi);
-    const ambient = new THREE.AmbientLight(0x141824, 0.7);
+    const ambient = new THREE.AmbientLight(0x1a2030, 0.95);
     this.scene.add(ambient);
-    const moon = new THREE.DirectionalLight(0x8899ff, 1.1);
+    const moon = new THREE.DirectionalLight(0x93a4ff, 1.25);
     moon.position.set(-30, 60, -20);
     moon.castShadow = true;
     moon.shadow.mapSize.set(2048, 2048);
