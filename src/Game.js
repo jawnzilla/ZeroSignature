@@ -229,6 +229,7 @@ export class Game {
   onPlayerHit() { this.hud.flashDamage(); }
 
   tick() {
+    try {
     const dt = Math.min(this.clock.getDelta(), 0.05);
     if (!this.player) return;
 
@@ -274,6 +275,10 @@ export class Game {
     this.moon.target.position.copy(this.camera.position);
     this.moon.target.updateMatrixWorld();
     this.fx.composer.render();
+    } catch (err) {
+      console.error('[tick error]', err);
+      window.__err = window.__err || (err && (err.stack || err.message));
+    }
   }
 
   newMission() {

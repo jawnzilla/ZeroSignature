@@ -63,7 +63,16 @@ export function generateWorld(seed) {
     if (grid[cz][cx] === 1) navCells.push([cx, cz]);
 
   // ---- spawn + objective ----
-  const spawn = cellCenter(pick(rng, navCells));
+  // prefer a cell with walkable neighbours so you never spawn wedged against a wall
+  const openCells = navCells.filter(([x, z]) => {
+    let n = 0;
+    for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const nx = x + dx, nz = z + dz;
+      if (nx >= 0 && nz >= 0 && nx < W && nz < H && grid[nz][nx] === 1) n++;
+    }
+    return n >= 2;
+  });
+  const spawn = cellCenter(pick(rng, openCells.length ? openCells : navCells));
   const objCells = navCells.filter(([x, z]) => dist2(x, z, spawn[0], spawn[1]) > 14 * 14);
   const objectiveCell = pick(rng, objCells);
   const objective = cellCenter(objectiveCell);

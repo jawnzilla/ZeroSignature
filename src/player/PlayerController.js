@@ -62,9 +62,9 @@ export class PlayerController {
   speedMult() { return 1 + this.upgrades.condition * 0.14; }
   get noiseRadius() {
     const shadow = this.upgrades.shadow;
-    if (this.crouching) return P.noise.crouch * (1 - shadow * 0.12);
-    if (this.sprinting) return P.noise.sprint * (1 - shadow * 0.1);
-    if (this.vel.lengthSq() > 0.01) return P.noise.walk * (1 - shadow * 0.1);
+    if (this.crouching) return CONFIG.noise.crouch * (1 - shadow * 0.12);
+    if (this.sprinting) return CONFIG.noise.sprint * (1 - shadow * 0.1);
+    if (this.vel.lengthSq() > 0.01) return CONFIG.noise.walk * (1 - shadow * 0.1);
     return 0;
   }
   get sneakMult() { return Math.max(0.4, 1 - this.upgrades.shadow * 0.18); }
