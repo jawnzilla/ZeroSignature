@@ -299,8 +299,9 @@ export function buildMesh(world) {
         let wx, wz, ww, wd, ry = 0;
         if (dx === 1) { wx = x + S; wz = z + S / 2; ww = 0.4; wd = S; ry = 0; }
         else if (dx === -1) { wx = x; wz = z + S / 2; ww = 0.4; wd = S; ry = 0; }
-        else if (dz === 1) { wx = x + S / 2; wz = z + S; ww = S; wd = 0.4; ry = Math.PI / 2; }
-        else { wx = x + S / 2; wz = z; ww = S; wd = 0.4; ry = Math.PI / 2; }
+        // north/south walls already run along X with these dims — do NOT rotate
+        else if (dz === 1) { wx = x + S / 2; wz = z + S; ww = S; wd = 0.4; ry = 0; }
+        else { wx = x + S / 2; wz = z; ww = S; wd = 0.4; ry = 0; }
         m.makeRotationY(ry);
         m.setPosition(wx, WH / 2, wz);
         wallG.push(box(ww, WH, wd).applyMatrix4(m));
