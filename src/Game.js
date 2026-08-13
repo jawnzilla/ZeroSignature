@@ -26,11 +26,11 @@ export class Game {
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     // Filmic tone mapping lifts crushed shadows and gives a film-like rolloff.
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.45;
+    this.renderer.toneMappingExposure = 1.75;
     container.appendChild(this.renderer.domElement);
 
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.Fog(CONFIG.fx.fogColor, 18, 80);
+    this.scene.fog = new THREE.Fog(CONFIG.fx.fogColor, 22, 200);
     this.scene.background = new THREE.Color(CONFIG.fx.skyColor);
     this.scene.userData = {};
 
@@ -52,11 +52,11 @@ export class Game {
   }
 
   setupLights() {
-    const hemi = new THREE.HemisphereLight(0x4d5fd0, 0x0c0c12, 1.2);
+    const hemi = new THREE.HemisphereLight(0x5a6bd0, 0x14141c, 1.45);
     this.scene.add(hemi);
-    const ambient = new THREE.AmbientLight(0x1a2030, 1.15);
+    const ambient = new THREE.AmbientLight(0x222a3a, 1.35);
     this.scene.add(ambient);
-    const moon = new THREE.DirectionalLight(0x93a4ff, 1.35);
+    const moon = new THREE.DirectionalLight(0xa0b0ff, 1.55);
     moon.position.set(-30, 60, -20);
     moon.castShadow = true;
     moon.shadow.mapSize.set(2048, 2048);
@@ -76,7 +76,7 @@ export class Game {
     world.rooms.forEach((r, i) => {
       const x = (r.x + r.w / 2) * world.cell;
       const z = (r.z + r.h / 2) * world.cell;
-      const pl = new THREE.PointLight(hues[i % hues.length], 6, 24, 1.6);
+      const pl = new THREE.PointLight(hues[i % hues.length], 8, 28, 1.6);
       pl.position.set(x, world.wallH - 0.6, z);
       this.scene.add(pl);
     });
