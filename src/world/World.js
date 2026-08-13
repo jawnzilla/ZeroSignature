@@ -301,7 +301,8 @@ export function buildMesh(world) {
         else if (dx === -1) { wx = x; wz = z + S / 2; ww = 0.4; wd = S; ry = 0; }
         else if (dz === 1) { wx = x + S / 2; wz = z + S; ww = S; wd = 0.4; ry = Math.PI / 2; }
         else { wx = x + S / 2; wz = z; ww = S; wd = 0.4; ry = Math.PI / 2; }
-        m.makeRotationY(ry).multiply(m.makeTranslation(wx, WH / 2, wz));
+        m.makeRotationY(ry);
+        m.setPosition(wx, WH / 2, wz);
         wallG.push(box(ww, WH, wd).applyMatrix4(m));
       }
     }
